@@ -1,5 +1,7 @@
 # cartesian
 
+[![CI](https://github.com/Kronuz/cartesian/actions/workflows/ci.yml/badge.svg)](https://github.com/Kronuz/cartesian/actions/workflows/ci.yml)
+
 A small C++20 library for converting geodetic coordinates (latitude, longitude,
 ellipsoid height on some SRID) to and from geocentric Cartesian `(x, y, z)`
 vectors on the WGS84 ellipsoid, plus the bit of vector algebra you need on those
