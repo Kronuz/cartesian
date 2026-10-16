@@ -14,7 +14,9 @@ test/test.cc                 Runnable smoke test: forward conversion vs. compute
 examples/demo.cc             A runnable tour (not a test).
 CMakeLists.txt               Library `cartesian` (+ alias cartesian::cartesian); NO dependencies; CTest test `cartesian`.
 LICENSE                      MIT, Copyright (c) 2015-2019 Dubalu LLC.
-README.md                    What it is, install, usage, API.
+README.md                    What it is, install, quick start.
+docs/API.md                  The API reference, SRIDs, and caveats.
+docs/cartesian.d2            The README diagram's source (docs/cartesian.svg is rendered from it).
 ARCHITECTURE.md              Internal design of the conversions, tables, and the decoupling delta.
 ```
 
@@ -98,11 +100,10 @@ formatting dependency to replace it.
   `THROW` / `strings::format` format strings; keep the same placeholders and
   message text so existing log/scrape expectations and the test's `e.what()`
   substring checks keep matching.
-- **`operator^=` and `operator*(double)` match the upstream quirks.** The
-  in-place cross-assign `^=` and the member `operator*(double)` are copied
-  verbatim from Xapiand (including an apparent typo in `^=` writing `x` twice).
-  If you "fix" them, you diverge from upstream; treat any change as a deliberate
-  fork, not a cleanup, and reconcile it upstream.
+- **`operator^=` and `operator*(double)` are known bugs.** `^=` stores the third
+  component in `x` (so `z` never updates), and the member `operator*(double)`
+  scales in place. They were copied verbatim from Xapiand, which now fetches this
+  library, so fixing them here is the fix; `docs/API.md` warns users until then.
 - **Geocentric values are large.** `x, y, z` are meters in the millions. Compare
   them with an absolute tolerance (the test uses 1e-3, a millimeter), not
   equality.

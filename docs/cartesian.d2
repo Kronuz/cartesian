@@ -1,0 +1,24 @@
+# cartesian: surface coordinates to Earth-centered vectors on WGS84, and back.
+# Render: d2 --layout elk --sketch --theme 302 docs/cartesian.d2 docs/cartesian.svg
+direction: right
+
+geo: geodetic {
+  label: "latitude, longitude, height\nin one of 17 SRIDs"
+}
+
+helmert: Helmert {
+  label: "7-parameter Helmert\nto WGS84"
+}
+
+vec: Cartesian {
+  label: "(x, y, z) meters\nfrom the Earth's center"
+}
+
+ops: vector algebra {
+  label: "dot · cross · norm\nangular distance"
+}
+
+geo -> helmert: "constructor"
+helmert -> vec
+vec -> ops
+vec -> geo: "toGeodetic · toLatLon" {style.stroke-dash: 3}
