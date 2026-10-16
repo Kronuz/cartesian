@@ -136,6 +136,21 @@ static void test_vector_algebra() {
 	assert(close(c.y, 0.0, 1e-12));
 	assert(close(c.z, 1.0, 1e-12));
 
+	// ^= is the in-place cross product: every component, z included.
+	Cartesian u(1.0, 2.0, 3.0), q(4.0, 5.0, 6.0);
+	Cartesian expect = u ^ q;   // (-3, 6, -3)
+	u ^= q;
+	assert(close(u.x, expect.x, 1e-12) && close(u.y, expect.y, 1e-12) && close(u.z, expect.z, 1e-12));
+	assert(close(u.z, -3.0, 1e-12));
+
+	// Scaling returns a new vector and leaves its operand alone.
+	Cartesian w(1.0, -2.0, 0.5);
+	Cartesian w3 = w * 3.0;
+	assert(close(w.x, 1.0, 1e-12) && close(w.y, -2.0, 1e-12) && close(w.z, 0.5, 1e-12));
+	assert(close(w3.x, 3.0, 1e-12) && close(w3.y, -6.0, 1e-12) && close(w3.z, 1.5, 1e-12));
+	Cartesian w2 = 2.0 * w;
+	assert(close(w2.y, -4.0, 1e-12) && close(w.y, -2.0, 1e-12));
+
 	// Addition and subtraction are componentwise.
 	Cartesian sum = a + b;
 	assert(close(sum.x, 1.0, 1e-12) && close(sum.y, 1.0, 1e-12) && close(sum.z, 0.0, 1e-12));

@@ -34,8 +34,5 @@ zero-norm `normalize()` throw `CartesianError`, which derives from
 
 ## Caveats
 
-- **`operator^=` is wrong**: it stores the cross product's third component in `x`
-  and leaves `z` unchanged. Use `a = a ^ b` until it is fixed.
-- **Member `operator*(double)` scales in place** and returns `*this`; the free
-  `c * scale` and `scale * c` return a scaled copy.
+- **Scaling returns a copy**: `c * scale` and `scale * c` never modify `c`.
 - Geocentric coordinates are meters in the millions; compare with a tolerance.

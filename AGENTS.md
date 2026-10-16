@@ -100,10 +100,10 @@ formatting dependency to replace it.
   `THROW` / `strings::format` format strings; keep the same placeholders and
   message text so existing log/scrape expectations and the test's `e.what()`
   substring checks keep matching.
-- **`operator^=` and `operator*(double)` are known bugs.** `^=` stores the third
-  component in `x` (so `z` never updates), and the member `operator*(double)`
-  scales in place. They were copied verbatim from Xapiand, which now fetches this
-  library, so fixing them here is the fix; `docs/API.md` warns users until then.
+- **`^=` and scaling are tested.** `^=` once stored the third component in `x`, and
+  a member `operator*(double)` scaled in place; both came from Xapiand. The test pins
+  `^=` against `^` and checks that scaling leaves its operand alone. Scaling is only
+  the free `operator*` overloads; don't reintroduce a member one.
 - **Geocentric values are large.** `x, y, z` are meters in the millions. Compare
   them with an absolute tolerance (the test uses 1e-3, a millimeter), not
   equality.

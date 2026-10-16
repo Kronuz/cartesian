@@ -225,16 +225,6 @@ Cartesian::operator*(const Cartesian& p) const noexcept
 }
 
 
-Cartesian&
-Cartesian::operator*(double _scale) noexcept
-{
-	x *= _scale;
-	y *= _scale;
-	z *= _scale;
-	return *this;
-}
-
-
 Cartesian
 Cartesian::operator^(const Cartesian& p) const noexcept
 {
@@ -250,7 +240,7 @@ Cartesian::operator^=(const Cartesian& p) noexcept
 	double z2 = x * p.y - p.x * y;
 	x = x2;
 	y = y2;
-	x = z2;
+	z = z2;
 	return *this;
 }
 

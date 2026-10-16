@@ -68,8 +68,6 @@ measures San Francisco to New York.
   vectors for spatial indexes.
 - ❌ Map projections (UTM, Web Mercator): it converts to and from Earth-centered
   coordinates only.
-- ❌ In-place cross products: `^=` is currently wrong; use `a = a ^ b`
-  ([docs/API.md](docs/API.md#caveats)).
 
 ## 📚 Documentation
 

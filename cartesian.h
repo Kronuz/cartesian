@@ -160,7 +160,6 @@ public:
 	bool operator>(const Cartesian& p) const noexcept;
 	// Dot product (or scalar product)
 	double operator*(const Cartesian& p) const noexcept;
-	Cartesian& operator*(double _scale) noexcept;
 	// Vector product
 	Cartesian operator^(const Cartesian& p) const noexcept;
 	Cartesian& operator^=(const Cartesian& p) noexcept;
