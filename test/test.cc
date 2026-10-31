@@ -96,8 +96,8 @@ static void test_round_trip() {
 	assert(close(ll.first, lat, 1e-7));
 	assert(close(ll.second, lon, 1e-7));
 
-	// toGeodetic recovers latitude, longitude, and height (meters). Height was
-	// zero, so it should come back within a millimeter of zero.
+	// toGeodetic recovers latitude, longitude, and height (meters). The input
+	// height is zero, so it comes back within a millimeter of zero.
 	auto geo = sf.toGeodetic();
 	assert(close(std::get<0>(geo), lat, 1e-7));
 	assert(close(std::get<1>(geo), lon, 1e-7));

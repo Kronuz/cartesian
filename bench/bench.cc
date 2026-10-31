@@ -1,5 +1,4 @@
-// Benchmark: std::hash<Cartesian> (bit mixing) against the original
-// (hash of to_string()).
+// Benchmark: std::hash<Cartesian> (bit mixing) against hashing to_string().
 //
 // Build: cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target cartesian_bench
 // Run:   ./build/cartesian_bench [points]

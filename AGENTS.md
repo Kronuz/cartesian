@@ -10,6 +10,7 @@ easy to fall into.
 ```
 cartesian.h                  Declares Cartesian, Units, the SRID macros, ellipsoid_t / datum_t, the constants, and the self-contained CartesianError. Header. From Xapiand (exception decoupled).
 cartesian.cc                 The datum/ellipsoid tables and every conversion: forward, Helmert -> WGS84, inverse (Lin & Wang), vector algebra. From Xapiand (THROW + strings::format decoupled).
+bench/bench.cc               Times std::hash<Cartesian> against hashing to_string().
 test/test.cc                 Runnable smoke test: forward conversion vs. computed values, round-trip, vector algebra, SRID support, error paths.
 examples/demo.cc             A runnable tour (not a test).
 CMakeLists.txt               Library `cartesian` (+ alias cartesian::cartesian); NO dependencies; CTest test `cartesian`.
@@ -38,9 +39,9 @@ repo is the top-level project (CMakeLists.txt), so consumers vendoring it via
 
 ## Dependencies
 
-None beyond the standard library and system headers. The extraction severed both
-of the original Xapiand couplings (the located-exception `THROW` / `CartesianError`
-and `strings::format`), so this builds against `std` alone. `std::format`
+None beyond the standard library and system headers. The library carries neither
+Xapiand coupling (the located-exception `THROW` / `CartesianError` and
+`strings::format`), so it builds against `std` alone. `std::format`
 (C++20) is used in `to_string()` and the error messages; don't reintroduce a
 formatting dependency to replace it.
 
@@ -60,7 +61,7 @@ formatting dependency to replace it.
 
 - **`CartesianError` is `std::runtime_error`-based.** It is defined inline at the
   top of `cartesian.h` with the same name and message-string constructors as the
-  Xapiand original. Xapiand catches this exact type. Don't reintroduce a
+  Xapiand original. Xapiand catches this exact type. Don't give it a
   `GeoSpatialError` / `ClientError` / located-exception base. The de-vendor
   boundary in Xapiand is responsible for remapping it back to an HTTP 400
   (`ClientError`); that remap is the consumer's job, not this library's.
@@ -96,14 +97,13 @@ formatting dependency to replace it.
 ## Traps
 
 - **`std::format` placeholders are load-bearing.** The error messages and
-  `to_string()` use `{}` / `{:.6}`. These came straight from the original
-  `THROW` / `strings::format` format strings; keep the same placeholders and
+  `to_string()` use `{}` / `{:.6}`, the same as upstream's `THROW` /
+  `strings::format` format strings; keep the same placeholders and
   message text so existing log/scrape expectations and the test's `e.what()`
   substring checks keep matching.
-- **`^=` and scaling are tested.** `^=` once stored the third component in `x`, and
-  a member `operator*(double)` scaled in place; both came from Xapiand. The test pins
-  `^=` against `^` and checks that scaling leaves its operand alone. Scaling is only
-  the free `operator*` overloads; don't reintroduce a member one.
+- **`^=` and scaling are tested.** The test pins `^=` against `^` and checks that
+  scaling leaves its operand alone. Scaling is only the free `operator*` overloads,
+  which return a copy; don't add a member one (it would scale in place).
 - **Geocentric values are large.** `x, y, z` are meters in the millions. Compare
   them with an absolute tolerance (the test uses 1e-3, a millimeter), not
   equality.
@@ -111,11 +111,10 @@ formatting dependency to replace it.
 ## Standalone vs. Xapiand
 
 This is a standalone extraction from
-[Xapiand](https://github.com/Kronuz/Xapiand). The decoupling delta is small and
-mechanical: `CartesianError` reparented from `GeoSpatialError`/`ClientError` to
-`std::runtime_error`; `THROW(CartesianError, "fmt", a)` rewritten as
-`throw CartesianError(std::format("fmt", a))`; `strings::format` swapped for
-`std::format`; `#include "exception.h"` and `#include "strings.hh"` dropped; and
-`<cstdint>` added so the header is self-contained for `uint8_t`. Everything else
-is the original source. Any change here should be reconcilable with upstream as a
-plain edit.
+[Xapiand](https://github.com/Kronuz/Xapiand). `ARCHITECTURE.md` lists the delta:
+`CartesianError` derives from `std::runtime_error`; throws are
+`throw CartesianError(std::format("fmt", a))`; `std::format` replaces
+`strings::format`; there is no `exception.h` or `strings.hh` include; `<cstdint>`
+keeps the header self-contained; `^=`, scaling, and `std::hash<Cartesian>` differ
+as described there. Everything else matches upstream. Keep any change
+reconcilable with upstream as a plain edit.

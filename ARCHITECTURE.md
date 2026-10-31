@@ -1,8 +1,8 @@
 # Architecture
 
 The internals of `cartesian`: how a geodetic coordinate becomes a geocentric
-vector and back, what the datum tables hold, and what changed when the library
-was lifted out of Xapiand. For usage see `README.md`; for the repo map and
+vector and back, what the datum tables hold, and how the library differs from
+its Xapiand original. For usage see `README.md`; for the repo map and
 invariants see `AGENTS.md`.
 
 ## Shape
@@ -94,27 +94,31 @@ angular distance between two surface points, `acos` of their dot product. The
 comparison operators order by `y`, then `x`, then `z`, which is what the
 geospatial indexing upstream relied on.
 
-## Decoupling delta from Xapiand
+## Delta from Xapiand
 
 The library is the geometry core of Xapiand's `src/geospatial/cartesian.{h,cc}`.
-The changes made during extraction are behavior-preserving:
+It differs from upstream in these ways:
 
-- **Exception reparented.** `CartesianError` derived from Xapiand's
-  `GeoSpatialError` -> `ClientError` (a located-exception `Exception`). Here it
-  derives from `std::runtime_error`, defined inline at the top of `cartesian.h`
-  with the same name and message-string constructors, so existing
-  `catch (const CartesianError&)` sites still work. The `#include "exception.h"`
-  is gone.
-- **`THROW(CartesianError, "fmt", a)` -> `throw CartesianError(std::format("fmt", a))`.**
-  The located-exception `THROW` macro needs a `BaseException`-shaped constructor
-  (`__func__, __FILE__, __LINE__, ...`); a `std::runtime_error` subclass does not
-  have it, so the throws are spelled out directly. The format strings and `{}`
-  placeholders are unchanged (they were already fmt/`std::format` style).
-- **`strings::format` -> `std::format`** (`<format>`), dropping `strings.hh`.
-  The one call site was `to_string()`.
-- **`<cstdint>` added** to `cartesian.h`. The `enum class Units : uint8_t` relied
-  on `uint8_t` arriving transitively through `exception.h`; with that include
-  gone, the header now pulls in `<cstdint>` itself so it stays self-contained.
+- **`CartesianError` derives from `std::runtime_error`.** Upstream derives it from
+  `GeoSpatialError` -> `ClientError` (a located-exception `Exception`). Here it is
+  defined inline at the top of `cartesian.h` with the same name and message-string
+  constructors, so `catch (const CartesianError&)` sites work unchanged. There is
+  no `#include "exception.h"`.
+- **Throws are spelled out:** `throw CartesianError(std::format("fmt", a))` where
+  upstream uses `THROW(CartesianError, "fmt", a)`. The located-exception `THROW`
+  macro needs a `BaseException`-shaped constructor (`__func__, __FILE__, __LINE__,
+  ...`), which a `std::runtime_error` subclass does not have. The format strings
+  and `{}` placeholders match upstream.
+- **`std::format`** (`<format>`) replaces `strings::format` in `to_string()`; there
+  is no `strings.hh` include.
+- **`cartesian.h` includes `<cstdint>`** for `enum class Units : uint8_t`, so the
+  header is self-contained (upstream gets `uint8_t` through `exception.h`).
+- **`^=` assigns `z`, and scaling returns a copy.** Only the free `operator*`
+  overloads scale; there is no member `operator*(double)`.
+- **`std::hash<Cartesian>`** mixes the bit patterns of the scaled coordinates
+  (`x*scale`, `y*scale`, `z*scale`, the values `to_string()` prints) and the SRID,
+  folding -0.0 into 0.0 so equal points hash equally. Hash values are not stable
+  across versions; do not persist them.
 
 The result has no third-party dependencies and no FetchContent in the build: it
 compiles against the standard library and system headers alone.
@@ -127,5 +131,5 @@ downstream is plain 3-vector algebra. Keeping the datum tables and the iterative
 inverse in one compiled `.cc` means consumers link a small library rather than
 dragging a header full of static tables into every translation unit. The
 conversions are the standard textbook ones (prime-vertical forward, Bursa-Wolf
-Helmert, Lin & Wang inverse); nothing here is novel, which is the point — it
+Helmert, Lin & Wang inverse), so it
 should agree with any other correct WGS84 implementation to sub-millimeter.
