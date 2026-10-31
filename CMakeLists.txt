@@ -31,6 +31,10 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   target_link_libraries(cartesian_test PRIVATE cartesian)
   add_test(NAME cartesian COMMAND cartesian_test)
 
+  # Benchmark of std::hash<Cartesian> (not part of ctest).
+  add_executable(cartesian_bench bench/bench.cc)
+  target_link_libraries(cartesian_bench PRIVATE cartesian)
+
   # A runnable tour of the library (not a test): build & run ./build/cartesian_demo
   add_executable(cartesian_demo examples/demo.cc)
   target_link_libraries(cartesian_demo PRIVATE cartesian)

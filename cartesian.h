@@ -24,6 +24,7 @@
 #pragma once
 
 #include <cmath>                                  // for std::acos
+#include <cstring>                                // for std::memcpy
 #include <cstdint>                                // for uint8_t
 #include <cstdio>
 #include <functional>
@@ -209,9 +210,23 @@ inline double Cartesian::distance(const Cartesian& p) const {
 namespace std {
 	template<>
 	struct hash<Cartesian> {
-		size_t operator()(const Cartesian& p) const {
-			std::hash<std::string> hash_fn;
-			return hash_fn(p.to_string());
+		// Mixes the bit patterns of the scaled coordinates (x*scale, y*scale,
+		// z*scale, the same values to_string() prints) and the SRID. Equal
+		// points hash equally, including 0.0 and -0.0 (which compare equal).
+		size_t operator()(const Cartesian& p) const noexcept {
+			auto mix = [](uint64_t h, double v) noexcept {
+				v += 0.0;  // folds -0.0 into 0.0
+				uint64_t bits;
+				std::memcpy(&bits, &v, sizeof bits);
+				h ^= bits;
+				h *= 0x9e3779b97f4a7c15ULL;
+				return h ^ (h >> 32);
+			};
+			uint64_t h = static_cast<uint64_t>(p.getSRID());
+			h = mix(h, p.x * p.scale);
+			h = mix(h, p.y * p.scale);
+			h = mix(h, p.z * p.scale);
+			return static_cast<size_t>(h);
 		}
 	};
 }

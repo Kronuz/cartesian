@@ -91,6 +91,13 @@ cmake -B build && cmake --build build && ctest --test-dir build
 Issues and pull requests are welcome. Read [AGENTS.md](AGENTS.md) first. CI must
 pass on every platform.
 
+## Performance note
+
+`std::hash<Cartesian>` mixes the bit patterns of `x*scale`, `y*scale`, `z*scale` and the SRID
+(0.0 and -0.0 hash alike) instead of hashing `to_string()`. It is about 300x faster, and nearby
+points no longer collide. Hash values differ from earlier versions; they were never stable
+(they came from `std::hash<std::string>`). `./build/cartesian_bench` times both.
+
 ## 📄 License
 
 MIT, Copyright (c) 2015-2018 Dubalu LLC. See [LICENSE](LICENSE). Extracted from

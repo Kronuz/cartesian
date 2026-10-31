@@ -13,8 +13,10 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <tuple>
 #include <utility>
 
@@ -235,7 +237,33 @@ static void test_errors_throw() {
 }
 
 
+// ---------------------------------------------------------------------------
+// std::hash<Cartesian>: equal points hash equally (0.0 and -0.0 compare equal),
+// distinct points hash differently, and the type works as an unordered key.
+// ---------------------------------------------------------------------------
+
+#define CHECK(c) do { if (!(c)) { std::printf("CHECK failed: %s (line %d)\n", #c, __LINE__); std::abort(); } } while (0)
+
+static void test_hash() {
+	std::hash<Cartesian> h;
+	CHECK(h(Cartesian(1.0, 2.0, 3.0)) == h(Cartesian(1.0, 2.0, 3.0)));
+	CHECK(h(Cartesian(0.0, 0.0, 1.0)) == h(Cartesian(-0.0, -0.0, 1.0)));
+	CHECK(h(Cartesian(1.0, 2.0, 3.0)) != h(Cartesian(1.0, 3.0, 2.0)));
+	CHECK(h(Cartesian(1.0, 2.0, 3.0)) != h(Cartesian(1.0, 2.0, 3.0 + 1e-9)));
+	CHECK(h(Cartesian(1.0, 2.0, 3.0, WGS84)) != h(Cartesian(1.0, 2.0, 3.0, OSGB36)));
+
+	std::unordered_set<Cartesian> set;
+	for (int i = 0; i < 1000; ++i) {
+		set.insert(Cartesian(i * 0.001, 1.0, 2.0));
+		set.insert(Cartesian(i * 0.001, 1.0, 2.0));
+	}
+	CHECK(set.size() == 1000);
+	CHECK(set.count(Cartesian(0.5, 1.0, 2.0)) == 1);
+}
+
+
 int main() {
+	test_hash();
 	test_to_cartesian();
 	test_default_ctor();
 	test_round_trip();
