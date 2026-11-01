@@ -18,6 +18,22 @@ library has no releases.
   random points and scales. A point with a NaN coordinate equals nothing, itself
   included, so it still cannot be found in a set. (`7066e9e`)
 
+### Performance
+
+`cartesian_bench`, the `std::hash<Cartesian>` row, ns per call, five interleaved runs,
+Apple clang 17, `-O3`. Hashing three coordinates instead of three coordinates and
+three products by `scale` is faster.
+
+| build | before | after |
+|---|---|---|
+| arm64 (M4 Pro) | 0.806 | 0.765 |
+| x86-64 (i9-9980HK) | 2.45 | 1.97 |
+| x86-64, `-march=haswell` | 1.93 | 1.46 |
+
+A first version of the fix folded -0.0 into 0.0 on the bits (shift, compare, select);
+it measured 0.84 ns on arm64 and 2.71 ns on x86-64, so the fold is the add of 0.0
+again. (`49f4075`)
+
 ## 2026-10-30
 
 ### Changed
