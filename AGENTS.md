@@ -17,7 +17,6 @@ CMakeLists.txt               Library `cartesian` (+ alias cartesian::cartesian);
 LICENSE                      MIT, Copyright (c) 2015-2019 Dubalu LLC.
 README.md                    What it is, install, quick start.
 docs/API.md                  The API reference, SRIDs, and caveats.
-docs/cartesian.d2            The README diagram's source (docs/cartesian.svg is rendered from it).
 ARCHITECTURE.md              Internal design of the conversions, tables, and the decoupling delta.
 ```
 
