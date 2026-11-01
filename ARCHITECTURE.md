@@ -115,10 +115,13 @@ It differs from upstream in these ways:
   header is self-contained (upstream gets `uint8_t` through `exception.h`).
 - **`^=` assigns `z`, and scaling returns a copy.** Only the free `operator*`
   overloads scale; there is no member `operator*(double)`.
-- **`std::hash<Cartesian>`** mixes the bit patterns of the scaled coordinates
-  (`x*scale`, `y*scale`, `z*scale`, the values `to_string()` prints) and the SRID,
-  folding -0.0 into 0.0 so equal points hash equally. Hash values are not stable
-  across versions; do not persist them.
+- **`std::hash<Cartesian>`** mixes the bit patterns of `x`, `y`, `z` and the SRID:
+  the fields `operator==` compares, so `a == b` implies `hash(a) == hash(b)`. `scale`
+  is not compared and is not hashed, so a normalized point hashes like the same
+  coordinates built directly. -0.0 folds into 0.0 (they compare equal). A point with
+  a NaN coordinate equals nothing, itself included, so it cannot be found in an
+  unordered container. Hash values are not stable across versions; do not persist
+  them.
 
 The result has no third-party dependencies and no FetchContent in the build: it
 compiles against the standard library and system headers alone.

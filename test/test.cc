@@ -10,15 +10,22 @@
 // std::runtime_error, so a std::exception catch sees the message too).
 //
 // Build via CMake: cmake -B build && cmake --build build && ctest --test-dir build
+#include <array>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <limits>
+#include <random>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "cartesian.h"
 
@@ -238,11 +245,26 @@ static void test_errors_throw() {
 
 
 // ---------------------------------------------------------------------------
-// std::hash<Cartesian>: equal points hash equally (0.0 and -0.0 compare equal),
-// distinct points hash differently, and the type works as an unordered key.
+// std::hash<Cartesian> hashes what operator== compares (x, y, z, SRID), so
+// a == b implies hash(a) == hash(b): scale is not compared and is not hashed,
+// and 0.0 and -0.0 hash alike. A point with a NaN coordinate equals nothing, so
+// the property says nothing about it. Distinct points hash differently, and the
+// type works as an unordered key.
 // ---------------------------------------------------------------------------
 
-#define CHECK(c) do { if (!(c)) { std::printf("CHECK failed: %s (line %d)\n", #c, __LINE__); std::abort(); } } while (0)
+#define CHECK(c) do { if (!(c)) { std::printf("CHECK failed: %s (line %d)\n", #c, __LINE__); std::fflush(stdout); std::abort(); } } while (0)
+
+static uint64_t bits_of(double v) {
+	uint64_t b;
+	std::memcpy(&b, &v, sizeof b);
+	return b;
+}
+
+static Cartesian with_scale(double x, double y, double z, double scale) {
+	Cartesian p(x, y, z);
+	p.scale = scale;
+	return p;
+}
 
 static void test_hash() {
 	std::hash<Cartesian> h;
@@ -262,8 +284,119 @@ static void test_hash() {
 }
 
 
+// A normalized point keeps the old norm in `scale`; operator== ignores it, so the
+// point equals the same coordinates built directly, and so must its hash.
+static void test_hash_scale() {
+	std::hash<Cartesian> h;
+	Cartesian n(3.0, 4.0, 0.0);
+	n.normalize();
+	Cartesian m(0.6, 0.8, 0.0);
+	CHECK(n.scale == 5.0 && m.scale == 1.0);
+	CHECK(n == m);
+	CHECK(h(n) == h(m));
+	std::unordered_set<Cartesian> set{m};
+	CHECK(set.count(n) == 1);
+	set.insert(n);
+	CHECK(set.size() == 1);
+
+	// The scale of a point is not part of its identity at all.
+	for (double scale : {0.0, -0.0, 1e-300, 2.0, 1e300, std::numeric_limits<double>::infinity(),
+			-std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()}) {
+		CHECK(h(with_scale(1.0, -2.0, 3.0, scale)) == h(Cartesian(1.0, -2.0, 3.0)));
+	}
+}
+
+
+// Exhaustive over a small domain: every point over a set of special coordinates
+// (both zeros, signs, a denormal-adjacent value, infinities, NaN) with a set of
+// scales, every ordered pair. Wherever a == b the hashes are equal; where the
+// coordinates differ in bits (zeros aside) the hashes differ.
+static void test_hash_domain() {
+	std::hash<Cartesian> h;
+	const double inf = std::numeric_limits<double>::infinity();
+	const double nan = std::numeric_limits<double>::quiet_NaN();
+	const double values[] = {0.0, -0.0, 1.0, -1.0, 0.5, 1e-300, inf, nan};
+	const double scales[] = {1.0, 5.0, 0.25, 0.0, -0.0, inf, nan};
+
+	struct Item {
+		Cartesian p;
+		size_t hash;
+	};
+	std::vector<Item> items;
+	for (double x : values) for (double y : values) for (double z : values) for (double s : scales) {
+		Cartesian p = with_scale(x, y, z, s);
+		items.push_back({p, h(p)});
+	}
+
+	size_t equal_pairs = 0;
+	for (const auto& a : items) {
+		for (const auto& b : items) {
+			if (a.p == b.p) {
+				++equal_pairs;
+				if (a.hash != b.hash) {
+					std::printf("hash differs for equal points (%g %g %g scale %g) and (%g %g %g scale %g)\n",
+						a.p.x, a.p.y, a.p.z, a.p.scale, b.p.x, b.p.y, b.p.z, b.p.scale);
+					std::fflush(stdout);
+					std::abort();
+				}
+			}
+		}
+	}
+	// Each point equals itself under every non-NaN scale, so equal pairs are far
+	// more numerous than points.
+	CHECK(equal_pairs > items.size());
+
+	// Distinct coordinate triples (zeros folded) give distinct hashes.
+	std::unordered_set<uint64_t> hashes;
+	std::set<std::array<uint64_t, 3>> distinct;
+	auto fold = [](double v) { return v == 0.0 ? uint64_t(0) : bits_of(v); };
+	for (const auto& it : items) {
+		if (distinct.insert(std::array<uint64_t, 3>{fold(it.p.x), fold(it.p.y), fold(it.p.z)}).second) {
+			CHECK(hashes.insert(it.hash).second);
+		}
+	}
+}
+
+
+// Random points with random scales: a copy of a point with another scale, and a
+// copy with the signs of its zeros flipped, equal the point and hash as it does.
+static void test_hash_random() {
+	std::hash<Cartesian> h;
+	std::mt19937_64 rng(20261031);
+	std::normal_distribution<double> g(0.0, 1e6);
+	const double specials[] = {0.0, -0.0, 1.0, -1.0, 1e-300, -1e-300, 1e300,
+		std::numeric_limits<double>::denorm_min(), std::numeric_limits<double>::max()};
+	auto coord = [&]() -> double {
+		switch (rng() % 4) {
+			case 0: return specials[rng() % (sizeof specials / sizeof *specials)];
+			case 1: { uint64_t b = rng(); double v; std::memcpy(&v, &b, sizeof v); return std::isnan(v) ? 0.0 : v; }
+			case 2: return static_cast<double>(static_cast<int64_t>(rng() % 2001) - 1000);
+			default: return g(rng);
+		}
+	};
+	auto scale = [&]() -> double {
+		switch (rng() % 4) {
+			case 0: return 1.0;
+			case 1: return specials[rng() % (sizeof specials / sizeof *specials)];
+			case 2: return std::numeric_limits<double>::quiet_NaN();
+			default: return g(rng);
+		}
+	};
+	for (int i = 0; i < 1000000; ++i) {
+		double x = coord(), y = coord(), z = coord();
+		Cartesian a = with_scale(x, y, z, scale());
+		Cartesian b = with_scale(x == 0.0 ? -x : x, y == 0.0 ? -y : y, z == 0.0 ? -z : z, scale());
+		CHECK(a == b);
+		CHECK(h(a) == h(b));
+	}
+}
+
+
 int main() {
 	test_hash();
+	test_hash_scale();
+	test_hash_domain();
+	test_hash_random();
 	test_to_cartesian();
 	test_default_ctor();
 	test_round_trip();

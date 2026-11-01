@@ -4,6 +4,21 @@ Notable changes to cartesian, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated because the
 library has no releases.
 
+## 2026-10-31
+
+### Fixed
+
+- `std::hash<Cartesian>` hashes `x`, `y`, `z` and the SRID, the fields `operator==`
+  compares. It hashed `x*scale`, `y*scale`, `z*scale`, so two points that compare
+  equal but differ in `scale` (`Cartesian(3, 4, 0)` after `normalize()` and
+  `Cartesian(0.6, 0.8, 0)`) hashed differently and an `unordered_set` did not find
+  one with the other. The original `to_string()` hash had the same flaw. The test
+  checks `a == b` implies `hash(a) == hash(b)` over every pair of an exhaustive
+  small domain (both zeros, signs, infinities, NaN, seven scales) and over a million
+  random points and scales. The -0.0 fold works on the bits, so it holds under
+  `-ffast-math` too. A point with a NaN coordinate equals nothing, itself included,
+  so it still cannot be found in a set.
+
 ## 2026-10-30
 
 ### Changed

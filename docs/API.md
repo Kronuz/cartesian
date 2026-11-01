@@ -26,7 +26,7 @@ Conversions and helpers:
 - `static bool is_SRID_supported(int)` / `int getSRID() const`.
 
 Operators: `==` `!=` `<` `>`, `*` (dot), `^` / `^=` (cross), `+` `+=` `-` `-=`,
-and scalar `*`. `std::hash<Cartesian>` is specialized (mixes the bits of the scaled `x y z` and the SRID; 0.0 and -0.0 hash alike).
+and scalar `*`. `std::hash<Cartesian>` is specialized: it mixes the bits of `x y z` and the SRID, the fields `==` compares, so equal points hash alike (0.0 and -0.0 included, `scale` ignored). A point with a NaN coordinate equals nothing, itself included.
 
 Errors: an unsupported SRID, an out-of-range latitude (outside ±90°), or a
 zero-norm `normalize()` throw `CartesianError`, which derives from
