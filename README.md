@@ -83,6 +83,37 @@ Not for:
 - Points with a NaN coordinate in a set: such a point equals nothing, itself included,
   so a lookup never finds it.
 
+## ⚡ Performance
+
+`cartesian_bench --compare` hashes 50,000 points with normally distributed coordinates, in
+nanoseconds per hash (the best of three runs, each the best of nine rounds). *`std::hash<Cartesian>`*
+is the library's hash. *Hash-combine* is what a caller writes without it: `std::hash<double>` of
+x, y and z and `std::hash<int>` of the SRID, folded with the golden-ratio combine of
+[`boost::hash_combine`](https://www.boost.org/doc/libs/release/libs/container_hash/), using
+libc++'s `std::hash` as shipped with Apple clang 17.0.0. Before timing, the bench checks that
+both put 1,029 edge-case points (zeros of both signs, infinities, three scales) into the same
+216 classes as `operator==`, and that 50,000 random points hash apart. The *`to_string()` text*
+row hashes the printed point with `std::hash<std::string>`; it keeps six digits and no SRID, so it
+splits 2,574 equal pairs of those points and merges 122 different ones, and it is shown for its
+cost only.
+
+| Hash | Apple M4 Pro (ns) | Intel Core i9-9980HK (ns) |
+|---|---:|---:|
+| `std::hash<Cartesian>` | 0.77 | 1.96 |
+| hash-combine of `std::hash<double>` | 0.85 | 1.50 |
+| `to_string()` text | 214 | 457 |
+
+On the i9 hash-combine is faster than `std::hash<Cartesian>`; on the M4 Pro it is slower.
+
+Apple M4 Pro (arm64), macOS 26.7.2, and Intel Core i9-9980HK (x86_64), macOS 15.8.1, both with
+Apple clang 17.0.0 and `-O3 -DNDEBUG`, at `2a601c7`:
+
+```sh
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target cartesian_bench
+./build/cartesian_bench --compare
+```
+
 ## 📚 Documentation
 
 - [docs/API.md](docs/API.md): constructors, SRIDs, conversions, operators, errors and
@@ -102,7 +133,8 @@ ctest --test-dir build --output-on-failure
 ```
 
 `./build/cartesian_demo` runs the tour and `./build/cartesian_bench` times
-`std::hash<Cartesian>`.
+`std::hash<Cartesian>` (`--compare` adds the comparators; `--check`, a CTest test, checks that
+the hashes agree with `operator==`).
 
 ## 🤝 Contributing
 
