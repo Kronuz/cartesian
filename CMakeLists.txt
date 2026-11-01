@@ -31,9 +31,12 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   target_link_libraries(cartesian_test PRIVATE cartesian)
   add_test(NAME cartesian COMMAND cartesian_test)
 
-  # Benchmark of std::hash<Cartesian> (not part of ctest).
+  # Benchmark of std::hash<Cartesian>; --compare adds a hash-combine of std::hash<double> and
+  # the to_string() text hash, after a same-results check. The timings are not a test; the
+  # check, which also runs alone as --check, is.
   add_executable(cartesian_bench bench/bench.cc)
   target_link_libraries(cartesian_bench PRIVATE cartesian)
+  add_test(NAME cartesian_bench_check COMMAND cartesian_bench --check 5000)
 
   # A runnable tour of the library (not a test): build & run ./build/cartesian_demo
   add_executable(cartesian_demo examples/demo.cc)
