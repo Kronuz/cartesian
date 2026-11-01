@@ -15,9 +15,8 @@ library has no releases.
   one with the other. The original `to_string()` hash had the same flaw. The test
   checks `a == b` implies `hash(a) == hash(b)` over every pair of an exhaustive
   small domain (both zeros, signs, infinities, NaN, seven scales) and over a million
-  random points and scales. The -0.0 fold works on the bits, so it holds under
-  `-ffast-math` too. A point with a NaN coordinate equals nothing, itself included,
-  so it still cannot be found in a set. (`7066e9e`)
+  random points and scales. A point with a NaN coordinate equals nothing, itself
+  included, so it still cannot be found in a set. (`7066e9e`)
 
 ## 2026-10-30
 

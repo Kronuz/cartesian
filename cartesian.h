@@ -217,11 +217,9 @@ namespace std {
 		// is required of it; it hashes by its bits.
 		size_t operator()(const Cartesian& p) const noexcept {
 			auto mix = [](uint64_t h, double v) noexcept {
+				v += 0.0;  // folds -0.0 into 0.0
 				uint64_t bits;
 				std::memcpy(&bits, &v, sizeof bits);
-				if ((bits << 1) == 0) {
-					bits = 0;  // folds -0.0 into 0.0
-				}
 				h ^= bits;
 				h *= 0x9e3779b97f4a7c15ULL;
 				return h ^ (h >> 32);
