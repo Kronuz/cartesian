@@ -116,6 +116,8 @@ cmake --build build --target cartesian_bench
 
 ## 📚 Documentation
 
+- [The Earth Is Not a Ball](https://kronuz.github.io/blog/cartesian/):
+  the Familiars post on why it exists and how it works.
 - [docs/API.md](docs/API.md): constructors, SRIDs, conversions, operators, errors and
   caveats.
 - [ARCHITECTURE.md](ARCHITECTURE.md): the ellipsoid math and the Helmert transform.
