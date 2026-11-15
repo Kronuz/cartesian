@@ -1,6 +1,6 @@
 # cartesian
 
-Part of [Kronuz C++ Libraries](https://github.com/Kronuz/cpp-libraries), a collection of small, reusable C++ libraries.
+Part of [Kronuz C++ Libraries](https://github.com/Kronuz/cpp-libraries), a collection of small, reusable C++ libraries. Read its story in [The Earth Is Not a Ball](https://kronuz.github.io/blog/cartesian/), a Familiars post.
 
 [![CI](https://github.com/Kronuz/cartesian/actions/workflows/ci.yml/badge.svg)](https://github.com/Kronuz/cartesian/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
